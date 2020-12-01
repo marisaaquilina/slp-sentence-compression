@@ -1,10 +1,14 @@
 import itertools
 import joblib
+import json
 import networkx as nx
 import spacy
 from flask import Flask, request
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
+cors = CORS(app)
+app.config["CORS_HEADERS"] = "Content-Type"
 nlp = spacy.load("en_core_web_sm")
 edge_model = joblib.load("edge_model.joblib")
 context_vectorizer = joblib.load("context_vectorizer.joblib")
@@ -119,14 +123,16 @@ def generate_candidate_compressions(nlp, edge_model, vectorizer, sentence):
 
 
 @app.route("/")
+@cross_origin()
 def main():
     sentence = request.args.get("sentence")
     if sentence is None or sentence == "":
-        return "usage: ?sentence=[your sentence here]"
+        return json.dumps({"msg": "usage: ?sentence=[your sentence here]",
+                           "compressions": None})
     candidate_compressions = generate_candidate_compressions(nlp,
                                                              edge_model,
                                                              context_vectorizer,
                                                              sentence)
-    return "".join([f"<p>{c}</p>"
-                    for c
-                    in sorted(candidate_compressions, key=lambda x: len(x))])
+    return json.dumps({"msg": "success",
+                       "compressions": list(sorted(candidate_compressions,
+                                                   key=lambda x: len(x)))})
