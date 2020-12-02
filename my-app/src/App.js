@@ -1,4 +1,6 @@
 import React, {useState} from "react";
+import {Button, Textarea} from "evergreen-ui";
+import "./App.css";
 
 function App() {
   const [val, setVal] = useState("");
@@ -11,10 +13,16 @@ function App() {
 
   return (
     <div className="App">
-      <h1>CSC 482 - Project 2: Sentence Compression</h1>
-      <p>Marisa Aquilina, Mian Uddin</p>
-      <input value={val} onChange={({target: {value}}) => setVal(value)}/>
-      <button onClick={handleClick}>Compress!</button>
+      <h1 className="title">Sentence Compressor</h1>
+      <p className="subtitle">Created by Marisa A. and Mian U.</p>
+      <div className="fields">
+        <Textarea
+          onChange={({target: {value}}) => setVal(value)}
+          placeholder="Your text here..."
+          value={val}
+        />
+        <Button onClick={handleClick}>Compress</Button>
+      </div>
       {resp && (
         <>
           <h2>Response</h2>

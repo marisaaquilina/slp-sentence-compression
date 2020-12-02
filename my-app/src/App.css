@@ -1,0 +1,41 @@
+@font-face {
+  font-family: 'AvenirLTStd';
+  src: url('AvenirLTStd-Medium.woff2') format('woff2'),
+      url('AvenirLTStd-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'AvenirLTStd-Roman';
+  src: url('AvenirLTStd-Roman.woff2') format('woff2'),
+      url('AvenirLTStd-Roman.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  background: #F3F3F3;
+}
+
+.App {
+  font-family: 'AvenirLTStd-Roman', sans-serif;
+  margin: 0 auto;
+  max-width: 64vw;
+}
+
+.title {
+  color: rgb(153, 153, 153);
+  font-family: 'AvenirLTStd', sans-serif;
+  margin-bottom: 0.2em;
+}
+
+.subtitle {
+  color: #444444;
+  font-family: 'IBM Plex Sans', sans-serif;
+  margin-top: 0.2em;
+  margin-bottom: 2em;
+  text-transform: uppercase;
+}
