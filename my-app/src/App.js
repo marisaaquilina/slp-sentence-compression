@@ -1,14 +1,18 @@
 import React, {useState} from "react";
-import {Button, Textarea} from "evergreen-ui";
+import {Button, Textarea, Spinner} from "evergreen-ui";
 import "./App.css";
 
 function App() {
   const [val, setVal] = useState("");
   const [resp, setResp] = useState(null);
+  const [loading, setLoading] = useState(false);
   const handleClick = async () => {
     setResp(null);
+    setLoading(true);
     const response = await fetch(`http://127.0.0.1:5000/?sentence=${encodeURIComponent(val)}`);
-    setResp(await response.json());
+    const respJSON = await response.json();
+    setLoading(false);
+    setResp(respJSON);
   };
 
   return (
@@ -21,18 +25,19 @@ function App() {
           placeholder="Your text here..."
           value={val}
         />
-        <Button onClick={handleClick}>Compress</Button>
+        <Button className="btn" onClick={handleClick}>Compress</Button>
       </div>
+      {loading && (
+        <Spinner className="spinner" />
+      )}
       {resp && (
         <>
           <h2>Response</h2>
-          <h3>Message</h3>
-          <p>{resp.msg}</p>
-          <h3>Compressions</h3>
-          {resp.compressions
-            ? <ul>{resp.compressions.map((c, i) => <li k={i}>{c}</li>)}</ul>
-            : <em>null</em>
+          <p>The server returned <span className="length">{resp.compressions ? resp.compressions.length : 0}</span> possible compressions. {resp.compressions && "Here are the top compressions:"}</p>
+          {resp.compressions &&
+            <div>{resp.compressions.slice(0, 5).map((c, i) => <div className="pair"><span className="prob">{Math.round((c[0] + Number.EPSILON) * 100) / 100}</span><span>{c[1]}</span></div>)}</div>
           }
+          <p className="srvmsg">{resp.msg}</p>
         </>
       )}
     </div>

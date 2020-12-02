@@ -39,3 +39,30 @@ body {
   margin-bottom: 2em;
   text-transform: uppercase;
 }
+
+.btn {
+  margin-top: 1em;
+}
+
+.spinner {
+  margin-top: 2em;
+}
+
+.length {
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+
+.pair {
+  margin-bottom: 0.2em;
+}
+
+.prob {
+  font-family: 'IBM Plex Sans', sans-serif;
+  margin-right: 1em;
+}
+
+.srvmsg {
+  color: rgb(153, 153, 153);
+  font-family: monospace;
+  margin-top: 2em;
+}

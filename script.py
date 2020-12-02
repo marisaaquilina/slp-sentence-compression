@@ -2,9 +2,14 @@ import itertools
 import joblib
 import json
 import networkx as nx
+import nltk
+import numpy as np
+import re
 import spacy
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
+from functools import reduce
+from spacy.lang.en import TAG_MAP
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -12,6 +17,9 @@ app.config["CORS_HEADERS"] = "Content-Type"
 nlp = spacy.load("en_core_web_sm")
 edge_model = joblib.load("edge_model.joblib")
 context_vectorizer = joblib.load("context_vectorizer.joblib")
+cfdist = joblib.load("cfdist.joblib")
+compression_model = joblib.load("compression_model.joblib")
+regression_vectorizer = joblib.load("regression_vectorizer.joblib")
 
 def nbor(token, offset):
     try:
@@ -122,17 +130,74 @@ def generate_candidate_compressions(nlp, edge_model, vectorizer, sentence):
     return candidates
 
 
+def match(uncomp, comp):
+    uncomp_indicies = [i for i in range(len(uncomp))]
+    comp_indicies = []
+    uncomp_w, comp_w = 0, 0
+    while uncomp_w < len(uncomp) and comp_w < len(comp):
+        if uncomp[uncomp_w] == comp[comp_w]:
+            comp_indicies.append(uncomp_w)
+            comp_w += 1
+        uncomp_w += 1
+    return comp_indicies
+
+
+def POS_features(s, c):
+    doc = nlp(" ".join(s))
+    s_indices = set([i for i in range(len(s))])
+    c_indices = set(match(s, c))
+    c_deletions = s_indices - c_indices
+    uncomp_doc = [token.tag_ for token in doc]
+    del_doc = [token.tag_ for token in doc if token.i in c_deletions]
+    pos_feat = {}
+    for pos in list(TAG_MAP.keys()):
+        pos_feat[pos + "_UNCOMP"] = uncomp_doc.count(pos)
+        pos_feat[pos + "_DEL"] = del_doc.count(pos)
+    return pos_feat
+
+
+def Gramm(c, cfdist):
+    m = len(c)
+    if m > 2:
+        likelihood_candidate = reduce(lambda x, y: x*y, [cfdist[(t1, t2)].freq(t3) for t1, t2, t3 in nltk.trigrams(c)])
+    elif m == 0:
+        return 0
+    else:
+        likelihood_candidate = 0
+    return (1 / m) * np.log(1 + likelihood_candidate) #+1 backoff
+
+
+def get_regression_features(uncomp_tok, curr_tok):
+    features = {
+        "grammaticality_rate": Gramm(curr_tok, cfdist),
+        # "importance_rate": Imp_Rate(D, uncomp_tok, curr_tok),
+        # "average_deletion_depth": average_deletion_depth(uncomp_tok, curr_tok),
+        # "average_inclusion_depth": average_inclusion_depth(uncomp_tok, curr_tok)
+    }
+    features.update(POS_features(uncomp_tok, curr_tok))
+    return features
+
+
 @app.route("/")
 @cross_origin()
 def main():
-    sentence = request.args.get("sentence")
-    if sentence is None or sentence == "":
-        return json.dumps({"msg": "usage: ?sentence=[your sentence here]",
-                           "compressions": None})
-    candidate_compressions = generate_candidate_compressions(nlp,
-                                                             edge_model,
-                                                             context_vectorizer,
-                                                             sentence)
-    return json.dumps({"msg": "success",
-                       "compressions": list(sorted(candidate_compressions,
-                                                   key=lambda x: len(x)))})
+    try:
+        sentence = request.args.get("sentence")
+        end = ""
+        if sentence is None or sentence == "":
+            return json.dumps({"msg": "usage: ?sentence=[your sentence here]",
+                            "compressions": None})
+        if re.match("\W", sentence[-1]):
+            end = sentence[-1]
+            sentence = sentence[:-1]
+        candidate_compressions = generate_candidate_compressions(nlp,
+                                                                edge_model,
+                                                                context_vectorizer,
+                                                                sentence)
+        regression_feats = [get_regression_features(sentence, c) for c in candidate_compressions]
+        ranks = compression_model.predict(regression_vectorizer.transform(regression_feats))
+        return json.dumps({"msg": "success",
+                        "compressions": list(sorted(zip(ranks, [f"{c}{end}" for c in candidate_compressions]),
+                                                    key=lambda x: -x[0]))})
+    except:
+        return json.dumps({"msg": "server encountered an error", "compressions": None})
