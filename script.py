@@ -199,5 +199,5 @@ def main():
         return json.dumps({"msg": "success",
                         "compressions": list(sorted(zip(ranks, [f"{c}{end}" for c in candidate_compressions]),
                                                     key=lambda x: -x[0]))})
-    except:
-        return json.dumps({"msg": "server encountered an error", "compressions": None})
+    except Exception as e:
+        return json.dumps({"msg": f"server encountered an error: {e}", "compressions": None})
