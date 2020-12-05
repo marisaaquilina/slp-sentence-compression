@@ -10,10 +10,15 @@ function App() {
   const handleClick = async () => {
     setResp(null);
     setLoading(true);
-    const response = await fetch(`http://127.0.0.1:5000/?sentence=${encodeURIComponent(val)}`);
-    const respJSON = await response.json();
-    setLoading(false);
-    setResp(respJSON);
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/?sentence=${encodeURIComponent(val)}`);
+      const respJSON = await response.json();
+      setLoading(false);
+      setResp(respJSON);
+    } catch (error) {
+      setLoading(false);
+      setResp({"msg": error.message, "compressions": null});
+    }
   };
 
   return (
