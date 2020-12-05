@@ -66,3 +66,8 @@ body {
   font-family: monospace;
   margin-top: 2em;
 }
+
+.toggle {
+  color: rgb(17, 85, 204);
+  cursor: pointer;
+}
